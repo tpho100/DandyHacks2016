@@ -18,7 +18,7 @@
       var newGamma = 0;
 
 			var scene = new THREE.Scene();
-      var camera = new THREE.PerspectiveCamera(75,window.innerWidth/window.innerHeight,0.1,1000);
+      var camera = new THREE.PerspectiveCamera(45,window.innerWidth/window.innerHeight,0.1,1000);
       var renderer = new THREE.WebGLRenderer();
       renderer.setClearColor(0xE5F2F9,1);
 			renderer.setSize( window.innerWidth, window.innerHeight );
@@ -39,44 +39,68 @@
 
       scene.add(cube);
 
-
-      floor = new THREE.Mesh(new THREE.PlaneBufferGeometry(500,500), new THREE.MeshLambertMaterial({map: THREE.ImageUtils.loadTexture('images/shower_tile2.jpg')}));
+      floor = new THREE.Mesh(new THREE.PlaneBufferGeometry(window.innerWidth-50,window.innerWidth-50), new THREE.MeshLambertMaterial({map: THREE.ImageUtils.loadTexture('images/shower_tile2.jpg')}));
       scene.add(floor);
 
-      camera.position.x = 0;    
-      camera.position.y = 250;
-      camera.position.z = 500;
-      camera.lookAt(scene.floor);
-
+      camera.position.set(0,0,800);
+      camera.lookAt(scene.position);
       var light = new THREE.AmbientLight(0xffffff);
       scene.add(light);
 
+      var hemilight = new THREE.HemisphereLight(0xffffff,0xffffff,0.6);
+      hemilight.color.setHSL(0.6,1,0.6);
+      hemilight.groundColor.setHSL(0.095,1,0.75);
+      hemilight.position.set(0,0,200);
+      scene.add(hemilight);
+
+
+      var tricklets = {};
+      var icelets = {};
 
       var loader = new THREE.JSONLoader();
       loader.load("models/dropplet4.js",function(geometry,materials){
         var material = new THREE.MeshFaceMaterial(materials);
         droplet = new THREE.Mesh(geometry,material);
+        droplet.position.set(0,0,100);
+        droplet.rotation.y = 90*Math.PI/180;
+        droplet.scale.set(5,5,5);
 
-        droplet.position.x = 0;
-        droplet.position.y = 0;
-        droplet.position.z = 40;
-        droplet.rotation.z = Math.PI/4;
-
-        droplet.scale.set(20,20,20);
         scene.add(droplet);
-        //var light = new THREE.PointLight(0xffffff);
-        //light.position.set(-250,200,100);
-        //scene.add(light);
+        
+        for(i = 0; i < 25; i++){
+          var xpos = getRandomInt(-100, 100);
+          var ypos = 150; //top of window
+
+          tricklets[i] = new THREE.Mesh(geometry,material);
+          tricklets[i].position.set(xpos,ypos,100);
+          tricklets[i].rotation.y = 90*Math.PI/180;
+          tricklets[i].scale.set(3,3,3);
+          scene.add(tricklets[i]);
+
+          xpos = getRandomInt(-window.innerWidth/2, window.innerWidth/2);
+
+          icelets[i] = new THREE.Mesh(geometry,material);
+          icelets[i].position.set(xpos,ypos,100);
+          icelets[i].rotation.y = 90*Math.PI/180;
+          icelets[i].scale.set(10,10,10);
+          scene.add(icelets[i]);
+        }
       });
 
 			document.body.appendChild( renderer.domElement );
 			var render = function () {
 				requestAnimationFrame( render );
       
-        droplet.translateY(-newBeta*Math.abs(newBeta)/250.0);
-        droplet.translateX(newGamma*Math.abs(newGamma)/250.0);
-       // droplet.rotation.z(newAlpha*Math.PI/180);
-       // droplet.rotation.y += 0.1;
+        droplet.translateY(-newBeta/100);
+        droplet.translateZ(newGamma/100);
+
+        for(i = 0; i < 25; i++){
+          icelets[i].translateY(-1 + (i/25));
+          icelets[i].rotation.y += 0.03;
+
+          tricklets[i].translateY(-1.2 + (i/25));
+          tricklets[i].rotation.y += 0.14;
+        }
 				renderer.render(scene, camera);
 			};
 
@@ -85,6 +109,10 @@
           newBeta = event.beta;
           newGamma = event.gamma;
       };
+
+      function getRandomInt(min,max){
+        return Math.floor(Math.random() * (max-min+1))+min;
+      }
 
       
       window.addEventListener("deviceorientation",handleOrientation,true);
