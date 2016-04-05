@@ -19,7 +19,7 @@
 
 			var scene = new THREE.Scene();
       var camera = new THREE.PerspectiveCamera(45,window.innerWidth/window.innerHeight,0.1,1000);
-      var renderer = new THREE.WebGLRenderer();
+      var renderer = new THREE.WebGLRenderer({antialias: true});
       renderer.setClearColor(0xE5F2F9,1);
 			renderer.setSize( window.innerWidth, window.innerHeight );
 
@@ -39,10 +39,10 @@
 
       scene.add(cube);
 
-      floor = new THREE.Mesh(new THREE.PlaneBufferGeometry(window.innerWidth-50,window.innerWidth-50), new THREE.MeshLambertMaterial({map: THREE.ImageUtils.loadTexture('images/shower_tile2.jpg')}));
+      floor = new THREE.Mesh(new THREE.PlaneBufferGeometry(500,500), new THREE.MeshLambertMaterial({map: THREE.ImageUtils.loadTexture('images/shower_tile2.jpg')}));
       scene.add(floor);
 
-      camera.position.set(0,0,800);
+      camera.position.set(0,0,500);
       camera.lookAt(scene.position);
       var light = new THREE.AmbientLight(0xffffff);
       scene.add(light);
@@ -52,55 +52,105 @@
       hemilight.groundColor.setHSL(0.095,1,0.75);
       hemilight.position.set(0,0,200);
       scene.add(hemilight);
+      scene.updateMatrixWorld(true);
 
+
+      var xBound = 200;
+      var yBound = 3500;
+      var zBound = 200;
+
+      var trickletNum = 15;
+      var iceletNum = 15;
 
       var tricklets = {};
       var icelets = {};
+      var position = new THREE.Vector3();
 
       var loader = new THREE.JSONLoader();
       loader.load("models/dropplet4.js",function(geometry,materials){
         var material = new THREE.MeshFaceMaterial(materials);
         droplet = new THREE.Mesh(geometry,material);
-        droplet.position.set(0,0,100);
+        droplet.position.set(0,0,150);
         droplet.rotation.y = 90*Math.PI/180;
         droplet.scale.set(5,5,5);
 
         scene.add(droplet);
-        
-        for(i = 0; i < 25; i++){
-          var xpos = getRandomInt(-100, 100);
-          var ypos = 150; //top of window
+        });
 
+
+        loader.load("models/icelet.js",function(geometry,materials){
+            var material = new THREE.MeshFaceMaterial(materials);
+
+            for(i = 0; i < iceletNum; i++){
+              var xpos = getRandomInt(-75, 75);
+              var ypos = 150; //top of window
+
+              icelets[i] = new THREE.Mesh(geometry,material);
+              icelets[i].position.set(xpos,ypos,100);
+              icelets[i].rotation.y = 90*Math.PI/180;
+              icelets[i].scale.set(5.5,5.5,5.5);
+              scene.add(icelets[i]);
+          }
+       });
+
+      loader.load("models/tricklet.js",function(geometry,materials){
+        var material = new THREE.MeshFaceMaterial(materials);
+        for(i = 0; i < trickletNum; i++){
+          var xpos = getRandomInt(-75, 75);
+          var ypos = 150; //top of window
           tricklets[i] = new THREE.Mesh(geometry,material);
           tricklets[i].position.set(xpos,ypos,100);
           tricklets[i].rotation.y = 90*Math.PI/180;
-          tricklets[i].scale.set(3,3,3);
+          tricklets[i].scale.set(4,4,4);
           scene.add(tricklets[i]);
-
-          xpos = getRandomInt(-window.innerWidth/2, window.innerWidth/2);
-
-          icelets[i] = new THREE.Mesh(geometry,material);
-          icelets[i].position.set(xpos,ypos,100);
-          icelets[i].rotation.y = 90*Math.PI/180;
-          icelets[i].scale.set(10,10,10);
-          scene.add(icelets[i]);
         }
       });
 
+      var oldCamX = 0;
+      var oldCamY = 0;
+      var downKeyValue = 0;
+      var sideKeyValue = 0;
+
 			document.body.appendChild( renderer.domElement );
 			var render = function () {
+        document.onkeydown = checkKey;
 				requestAnimationFrame( render );
-      
         droplet.translateY(-newBeta/100);
         droplet.translateZ(newGamma/100);
 
-        for(i = 0; i < 25; i++){
-          icelets[i].translateY(-1 + (i/25));
+        for(i = 0; i < iceletNum; i++){
+          icelets[i].translateY(-1 +(i/25) );
           icelets[i].rotation.y += 0.03;
 
-          tricklets[i].translateY(-1.2 + (i/25));
+          tricklets[i].translateY(-1 +(i/25));
           tricklets[i].rotation.y += 0.14;
         }
+
+        droplet.translateY(-0.5 + downKeyValue);
+        droplet.translateX(sideKeyValue);
+
+        position.getPositionFromMatrix(droplet.matrixWorld);
+
+        camera.position.set(position.x,position.y,600);
+        oldCamX = oldCamX + newGamma/100;
+        oldCamY = oldCamY - newBeta/100;
+
+        downKeyValue = 0;
+        sideKeyValue = 0;
+
+        if(position.x < (-xBound/2)){
+          droplet.position.x = -xBound/2;
+        }
+
+        if(position.x > xBound/2 ){
+          droplet.position.x = xBound/2;
+        }
+
+        if(position.y < -yBound/2) {
+          droplet.position.y = -yBound/2;
+        }
+
+        camera.updateProjectionMatrix();
 				renderer.render(scene, camera);
 			};
 
@@ -114,9 +164,48 @@
         return Math.floor(Math.random() * (max-min+1))+min;
       }
 
-      
-      window.addEventListener("deviceorientation",handleOrientation,true);
+      function loadSkyBox(){
+        var materials = [
+            createMaterial('images/rightsky.jpg'),
+            createMaterial('images/leftsky.jpg'),
+            createMaterial('images/topsky.jpg'),
+            createMaterial('images/bottomsky.jpg'),
+            createMaterial('images/backsky.jpg'),
+            createMaterial('images/frontsky.jpg')
+          ];
 
+      var mesh = new THREE.Mesh( new THREE.BoxGeometry(xBound,yBound,zBound,1,1,1),new THREE.MeshFaceMaterial(materials));
+
+        mesh.scale.set(-1,1,1);
+        scene.add(mesh);
+      }
+
+    function createMaterial(path){
+      var texture = THREE.ImageUtils.loadTexture(path);
+      var material = new THREE.MeshBasicMaterial({map: texture, overdraw: 0.5});
+      return material;
+    }
+
+    function checkKey(e) {
+      console.log("key down!!");
+      if(e.keyCode == 40) {//down arrow
+        downKeyValue = -0.5;
+        console.log("hitting down");
+
+      } else if(e.keyCode == 37){ //left
+        sideKeyValue = -0.5;
+        console.log("hitting left");
+
+      } else if(e.keyCode == 39){
+        sideKeyValue = 0.5;
+        console.log("hitting right");
+      } else { console.log("nothing"); }
+    }
+      
+      //document.onkeydown = checkKey;
+      window.addEventListener("keydown",checkKey,true);
+      window.addEventListener("deviceorientation",handleOrientation,true);
+      loadSkyBox();
 			render();
 		</script>
 	</body>
