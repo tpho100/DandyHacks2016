@@ -1,6 +1,6 @@
 <html>
 	<head>
-		<title>clarkson</title>
+		<title>Dropplet!</title>
 		<style>
 			body { margin:0 ; }
 			canvas { width: 100%; height: 100% }
@@ -17,19 +17,13 @@
       var newBeta = 0;
       var newGamma = 0;
 
-			var scene = new THREE.Scene();
+		var scene = new THREE.Scene();
       var camera = new THREE.PerspectiveCamera(45,window.innerWidth/window.innerHeight,0.1,1000);
       var renderer = new THREE.WebGLRenderer({antialias: true});
       renderer.setClearColor(0xE5F2F9,1);
 			renderer.setSize( window.innerWidth, window.innerHeight );
-
       scene.add(camera);      
-
-      var axis = new THREE.AxisHelper(10);
-      scene.add(axis);
-
       var droplet,floor;
-
       var xBound = 200;
       var yBound = 3500;
       var zBound = 200;
@@ -54,7 +48,6 @@
       var trickletQuarts = 0.5;
       var iceletQuarts = 1;
       var waterSaved = 0;
-      var totalVolume = (trickletNum*trickletQuarts) + (iceletNum*iceletQuarts);
       var collectedVolume = 0;
 
       var tricklets = {};
@@ -106,50 +99,49 @@
 			document.body.appendChild( renderer.domElement );
 			var render = function () {
 				requestAnimationFrame( render );
-        droplet.translateY(-newBeta/100);
-        droplet.translateZ(newGamma/100);
+				droplet.translateY(-newBeta/100);
+				droplet.translateZ(newGamma/100);
 
-        for(i = 0; i < iceletNum; i++){
-          icelets[i].translateY(-1.1 + (i/25));
-          icelets[i].rotation.y += 0.03;
+				for(i = 0; i < iceletNum; i++){
+					icelets[i].translateY(-1.1 + (i/25));
+					icelets[i].rotation.y += 0.03;
 
-          tricklets[i].translateY(-1 +(i/25));
-          tricklets[i].rotation.y += 0.14;
+					tricklets[i].translateY(-1 +(i/25));
+					ricklets[i].rotation.y += 0.14;
 
-          if(icelets[i].position.y < -yBound/2){
-            scene.remove(icelets[i]);
-            collectedVolume += iceletQuarts;
+					//if(icelets[i].position.y < -yBound/2){
+						//scene.remove(icelets[i]);
+						//collectedVolume += iceletQuarts;
+					//}
 
-          }
+					//if(tricklets[i].position.y < -yBound/2){
+						//scene.remove(tricklets[i]);
+						//collectedVolume += trickletQuarts;
+					//}
+				}
 
-          if(tricklets[i].position.y < -yBound/2){
-            scene.remove(tricklets[i]);
-            collectedVolume += trickletQuarts;
-          }
-        }
+				//droplet.translateY(dropletSpeed);
 
-        droplet.translateY(dropletSpeed);
-
-        position.getPositionFromMatrix(droplet.matrixWorld);
-        camera.position.set(position.x,position.y,600);
+				position.getPositionFromMatrix(droplet.matrixWorld);
+				camera.position.set(position.x, position.y,600);
 
 
-        if(position.x < (-xBound/2)){
-          droplet.position.x = -xBound/2;
-        }
+				if(position.x < (-xBound/2)){
+					droplet.position.x = -xBound/2;
+				}
 
-        if(position.x > xBound/2 ){
-          droplet.position.x = xBound/2;
-        }
+				if(position.x > xBound/2 ){
+					droplet.position.x = xBound/2;
+				}
 
-        if(position.y < -yBound/2) {
-          droplet.position.y = -yBound/2;
-        }
+				if(position.y < -yBound/2) {
+					droplet.position.y = -yBound/2;
+				}
 
         //COLLISION DETECTION
 
 
-        camera.updateProjectionMatrix();
+				camera.updateProjectionMatrix();
 				renderer.render(scene, camera);
 			};
 
@@ -202,9 +194,9 @@
     }
       
       //document.onkeydown = checkKey;
-      window.addEventListener("keydown",checkKey,true);
-      window.addEventListener("deviceorientation",handleOrientation,true);
-      loadSkyBox();
+			window.addEventListener("keydown",checkKey,true);
+			window.addEventListener("deviceorientation",handleOrientation,true);
+			loadSkyBox();
 			render();
 		</script>
 	</body>
