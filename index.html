@@ -28,18 +28,13 @@
       var axis = new THREE.AxisHelper(10);
       scene.add(axis);
 
-      var cubeGeometry = new THREE.BoxGeometry(5,5,5);
-      var cubeMaterial = new THREE.MeshBasicMaterial({color:0xdddddd,wireframe:true});
-      var cube = new THREE.Mesh(cubeGeometry,cubeMaterial);
       var droplet,floor;
 
-      cube.position.x = 0;
-      cube.position.y = 0;
-      cube.position.z = 0;
+      var xBound = 200;
+      var yBound = 3500;
+      var zBound = 200;
 
-      scene.add(cube);
-
-      floor = new THREE.Mesh(new THREE.PlaneBufferGeometry(500,500), new THREE.MeshLambertMaterial({map: THREE.ImageUtils.loadTexture('images/shower_tile2.jpg')}));
+      floor = new THREE.Mesh(new THREE.PlaneBufferGeometry(200,3500), new THREE.MeshLambertMaterial({map: THREE.ImageUtils.loadTexture('images/shower_tile2.jpg')}));
       scene.add(floor);
 
       camera.position.set(0,0,500);
@@ -54,17 +49,18 @@
       scene.add(hemilight);
       scene.updateMatrixWorld(true);
 
-
-      var xBound = 200;
-      var yBound = 3500;
-      var zBound = 200;
-
       var trickletNum = 15;
       var iceletNum = 15;
+      var trickletQuarts = 0.5;
+      var iceletQuarts = 1;
+      var waterSaved = 0;
+      var totalVolume = (trickletNum*trickletQuarts) + (iceletNum*iceletQuarts);
+      var collectedVolume = 0;
 
       var tricklets = {};
       var icelets = {};
       var position = new THREE.Vector3();
+      var dropletSpeed = -0.5;
 
       var loader = new THREE.JSONLoader();
       loader.load("models/dropplet4.js",function(geometry,materials){
@@ -83,7 +79,7 @@
 
             for(i = 0; i < iceletNum; i++){
               var xpos = getRandomInt(-75, 75);
-              var ypos = 150; //top of window
+              var ypos = 200; //top of window
 
               icelets[i] = new THREE.Mesh(geometry,material);
               icelets[i].position.set(xpos,ypos,100);
@@ -97,7 +93,7 @@
         var material = new THREE.MeshFaceMaterial(materials);
         for(i = 0; i < trickletNum; i++){
           var xpos = getRandomInt(-75, 75);
-          var ypos = 150; //top of window
+          var ypos = 200; //top of window
           tricklets[i] = new THREE.Mesh(geometry,material);
           tricklets[i].position.set(xpos,ypos,100);
           tricklets[i].rotation.y = 90*Math.PI/180;
@@ -106,37 +102,37 @@
         }
       });
 
-      var oldCamX = 0;
-      var oldCamY = 0;
-      var downKeyValue = 0;
-      var sideKeyValue = 0;
 
 			document.body.appendChild( renderer.domElement );
 			var render = function () {
-        document.onkeydown = checkKey;
 				requestAnimationFrame( render );
         droplet.translateY(-newBeta/100);
         droplet.translateZ(newGamma/100);
 
         for(i = 0; i < iceletNum; i++){
-          icelets[i].translateY(-1 +(i/25) );
+          icelets[i].translateY(-1.1 + (i/25));
           icelets[i].rotation.y += 0.03;
 
           tricklets[i].translateY(-1 +(i/25));
           tricklets[i].rotation.y += 0.14;
+
+          if(icelets[i].position.y < -yBound/2){
+            scene.remove(icelets[i]);
+            collectedVolume += iceletQuarts;
+
+          }
+
+          if(tricklets[i].position.y < -yBound/2){
+            scene.remove(tricklets[i]);
+            collectedVolume += trickletQuarts;
+          }
         }
 
-        droplet.translateY(-0.5 + downKeyValue);
-        droplet.translateX(sideKeyValue);
+        droplet.translateY(dropletSpeed);
 
         position.getPositionFromMatrix(droplet.matrixWorld);
-
         camera.position.set(position.x,position.y,600);
-        oldCamX = oldCamX + newGamma/100;
-        oldCamY = oldCamY - newBeta/100;
 
-        downKeyValue = 0;
-        sideKeyValue = 0;
 
         if(position.x < (-xBound/2)){
           droplet.position.x = -xBound/2;
@@ -149,6 +145,9 @@
         if(position.y < -yBound/2) {
           droplet.position.y = -yBound/2;
         }
+
+        //COLLISION DETECTION
+
 
         camera.updateProjectionMatrix();
 				renderer.render(scene, camera);
@@ -189,16 +188,16 @@
     function checkKey(e) {
       console.log("key down!!");
       if(e.keyCode == 40) {//down arrow
-        downKeyValue = -0.5;
+        droplet.translateY(-1);
         console.log("hitting down");
 
       } else if(e.keyCode == 37){ //left
-        sideKeyValue = -0.5;
         console.log("hitting left");
+        droplet.translateX(-1);
 
       } else if(e.keyCode == 39){
-        sideKeyValue = 0.5;
         console.log("hitting right");
+        droplet.translateX(1);
       } else { console.log("nothing"); }
     }
       
